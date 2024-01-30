@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>Encrypt and Decrypt</title>
+</head>
+<body>
+    <header>
+        <h1>Encrypt and Decrypt</h1>
+    </header>
+    <main>
+        <div class="container">
+            
+            <form action="{{ url_for('transfer_left_to_right') }}" method="post" class="box left-box" id="transferLeftForm">
+                <h2>TextBox</h2>
+                <textarea name="leftData" placeholder="Enter data">{{ left_data }}</textarea>
+                <input type="hidden" name="rightData" value="{{ right_data }}">
+            </form>
+
+            <div id="middle-box">
+                <input type="submit" value="Encrypt" form="transferLeftForm" class="button">
+                <input type="submit" value="Decrypt" form="transferRightForm" class="button">
+            </div>
+
+            <form action="{{ url_for('transfer_right_to_left') }}" method="post" class="box right-box" id="transferRightForm">
+                <h2>TextBox</h2>
+                <textarea name="rightData" placeholder="Enter data">{{ right_data }}</textarea>
+                <input type="hidden" name="leftData" value="{{ left_data }}">
+            </form>
+        </div>
+    </main>
+</body>
+</html>
