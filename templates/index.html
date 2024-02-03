@@ -1,9 +1,10 @@
+<!-- templates/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="../static/styles.css">
     <title>Encrypt and Decrypt</title>
 </head>
 <body>
@@ -12,22 +13,35 @@
     </header>
     <main>
         <div class="container">
-            
-            <form action="{{ url_for('transfer_left_to_right') }}" method="post" class="box left-box" id="transferLeftForm">
-                <h2>TextBox</h2>
-                <textarea name="leftData" placeholder="Enter data">{{ left_data }}</textarea>
-                <input type="hidden" name="rightData" value="{{ right_data }}">
+            <form action="{{ url_for('encrypt_data') }}" method="post" class="box left-box" id="transferLeftForm">
+                <h2>Text and Key</h2>
+                <input type="text" name="leftText" placeholder="Enter text" class="input-field" value="{{ left_text }}">
+                <input type="text" name="leftKey" placeholder="Enter key" class="input-field" value="{{ left_key }}">
+                <input type="submit" value="Encrypt">
+                <input type="hidden" name="rightData" id="rightData">
             </form>
 
+            <!-- Middle box -->
+            <!-- Middle box -->
             <div id="middle-box">
-                <input type="submit" value="Encrypt" form="transferLeftForm" class="button">
-                <input type="submit" value="Decrypt" form="transferRightForm" class="button">
+                <h2>Results</h2>
+                <textarea name="middleData" id="middleData" placeholder="OutputData" readonly>
+                    Text: {{ left_text }}
+                    Key: {{ left_key }}
+                    Encrypted Text: {{ encrypted_text }}
+                    Decoded Polybius: {{ decoded_polybius }}
+                    Decoded Vigenere: {{ decoded_vigenere }}
+                    Decoded Text: {{ decoded_text }}
+                </textarea>
             </div>
 
-            <form action="{{ url_for('transfer_right_to_left') }}" method="post" class="box right-box" id="transferRightForm">
-                <h2>TextBox</h2>
-                <textarea name="rightData" placeholder="Enter data">{{ right_data }}</textarea>
-                <input type="hidden" name="leftData" value="{{ left_data }}">
+
+
+            <form action="{{ url_for('decrypt_data') }}" method="post" class="box right-box" id="transferRightForm">
+                <h2>Decrypt</h2>
+                <textarea name="rightData" placeholder="Enter data" readonly>{{ encrypted_text }}</textarea>
+                <input type="hidden" name="leftKey" value="{{ left_key }}">
+                <input type="submit" value="Decrypt">
             </form>
         </div>
     </main>
