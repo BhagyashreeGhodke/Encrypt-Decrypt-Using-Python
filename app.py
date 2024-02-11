@@ -3,139 +3,169 @@ from flask import Flask, render_template, request
 import string
 app = Flask(__name__)
 
-def generate_vigenere_key(message, key):
-    key = ''.join([key[i % len(key)] for i in range(len(message))])
-    return key
-
-def vigenere_encrypt(plaintext, key):
-    encrypted_text = ''
-    for i in range(len(plaintext)):
-        char = plaintext[i]
-        if char.isalpha():
-            shift = ord(key[i].upper()) - ord('A')
-            encrypted_char = chr((ord(char.upper()) + shift - 2 * ord('A')) % 26 + ord('A'))
-            encrypted_text += encrypted_char
+def vigenere_encrypt(plain_text, key):
+    key_repeated = (key * (len(plain_text) // len(key) + 1))[:len(plain_text)]
+    encrypted_text = ""
+    for p, k in zip(plain_text, key_repeated):
+        if p.isalpha():
+            shift = ord(k.upper()) - ord('A')
+            if p.isupper():
+                encrypted_text += chr((ord(p) + shift - ord('A')) % 26 + ord('A'))
+            else:
+                encrypted_text += chr((ord(p) + shift - ord('a')) % 26 + ord('a'))
         else:
-            encrypted_text += char
+            encrypted_text += p
     return encrypted_text
 
-def vigenere_decrypt(ciphertext, key):
-    decrypted_text = ''
-    for i in range(len(ciphertext)):
-        char = ciphertext[i]
-        if char.isalpha():
-            shift = ord(key[i].upper()) - ord('A')
-            decrypted_char = chr((ord(char.upper()) - shift - 2 * ord('A')) % 26 + ord('A'))
-            decrypted_text += decrypted_char
+def vigenere_decrypt(encrypted_text, key):
+    key_repeated = (key * (len(encrypted_text) // len(key) + 1))[:len(encrypted_text)]
+    decrypted_text = ""
+    for p, k in zip(encrypted_text, key_repeated):
+        if p.isalpha():
+            shift = ord(k.upper()) - ord('A')
+            if p.isupper():
+                decrypted_text += chr((ord(p) - shift - ord('A')) % 26 + ord('A'))
+            else:
+                decrypted_text += chr((ord(p) - shift - ord('a')) % 26 + ord('a'))
         else:
-            decrypted_text += char
+            decrypted_text += p
     return decrypted_text
 
-def generate_polybius_table():
-    alphabet = string.ascii_uppercase
-    table = [['' for _ in range(5)] for _ in range(5)]
-    k = 0
-    for i in range(5):
-        for j in range(5):
-            if k < len(alphabet):
-                table[i][j] = alphabet[k]
-                k += 1
-    return table
-
-def polybius_encrypt(plaintext, table):
-    encrypted_text = ''
-    for char in plaintext:
+def polybius_encrypt(text):
+    polybius_square = [
+        ['A', 'B', 'C', 'D', 'E'],
+        ['F', 'G', 'H', 'I', 'K'],
+        ['L', 'M', 'N', 'O', 'P'],
+        ['Q', 'R', 'S', 'T', 'U'],
+        ['V', 'W', 'X', 'Y', 'Z']
+    ]
+    encrypted_text = ""
+    for char in text:
         if char.isalpha():
             char = char.upper()
-            for i in range(5):
-                for j in range(5):
-                    if table[i][j] == char:
-                        encrypted_text += str(i + 1).zfill(2) + str(j + 1).zfill(2)  # Treat two digits as a single number
+            if char == 'J':
+                char = 'I'
+            for i, row in enumerate(polybius_square):
+                if char in row:
+                    encrypted_text += str(i + 1) + str(row.index(char) + 1)
         else:
             encrypted_text += char
     return encrypted_text
 
-def polybius_decrypt(ciphertext, table):
-    decrypted_text = ''
+def polybius_decrypt(text):
+    polybius_square = [
+        ['A', 'B', 'C', 'D', 'E'],
+        ['F', 'G', 'H', 'I', 'K'],
+        ['L', 'M', 'N', 'O', 'P'],
+        ['Q', 'R', 'S', 'T', 'U'],
+        ['V', 'W', 'X', 'Y', 'Z']
+    ]
+    decrypted_text = ""
     i = 0
-    while i < len(ciphertext):
-        if ciphertext[i].isdigit() and ciphertext[i + 1].isdigit():
-            row = int(ciphertext[i:i + 2]) - 1
-            col = int(ciphertext[i + 2:i + 4]) - 1
-            decrypted_text += table[row][col]
-            i += 4
+    while i < len(text):
+        if text[i].isdigit():
+            row = int(text[i])
+            col = int(text[i + 1])
+            decrypted_text += polybius_square[row - 1][col - 1]
+            i += 2
         else:
-            decrypted_text += ciphertext[i]
+            decrypted_text += text[i]
             i += 1
     return decrypted_text
 
-def base36_encode(text):
-    decimal_value = int.from_bytes(text.encode('utf-8'), 'big')
-    return base36_encode_decimal(decimal_value)
+def reverse_text(text):
+    return text[::-1]
 
-def base36_encode_decimal(decimal_value):
-    characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    base36 = ''
-    while decimal_value:
-        decimal_value, remainder = divmod(decimal_value, 36)
-        base36 = characters[remainder] + base36
-    return base36 or '0'
 
-def base36_decode(text):
-    decimal_value = int(text, 36)
-    return decimal_value.to_bytes((decimal_value.bit_length() + 7) // 8, 'big').decode('utf-8')
+def decimal_to_base36(decimal_number):
+    """Converts a decimal number to its base-36 representation."""
+    digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    base36_string = ""
+    while decimal_number > 0:
+        remainder = decimal_number % 36
+        base36_string = digits[remainder] + base36_string  # Append digits in reverse order
+        decimal_number //= 36
+    return base36_string
+
+def base36_to_decimal(base36_string):
+    """Converts a base-36 string to its decimal equivalent."""
+    digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    decimal_number = 0
+    power = 0
+    for digit in base36_string[::-1]:  # Iterate through digits in reverse order
+        decimal_number += digits.index(digit) * (36 ** power)  # Multiply by corresponding power of 36
+        power += 1
+    return decimal_number
+
+# Get user input
+plain_text = input("Enter the plain text: ")
+key = input("Enter the Vigenere key: ")
+
+# Encrypt using Vigenere cipher
+vigenere_encrypted = vigenere_encrypt(plain_text, key)
+
+# Encrypt using Polybius cipher
+polybius_encrypted = polybius_encrypt(vigenere_encrypted)
+
+# Convert to integer
+polybius_encrypted = int(polybius_encrypted)
+
+#Polybius to Base36
+base36_string = decimal_to_base36(polybius_encrypted)
+
+# Convert back to decimal
+original_decimal = base36_to_decimal(base36_string)
+
+# Decrypt Polybius cipher
+polybius_decrypted = polybius_decrypt(str(original_decimal))
+
+# Decrypt Vigenere cipher
+vigenere_decrypted = vigenere_decrypt(polybius_decrypted, key)
+
+# # Display results
+# print("\nOriginal Text          :", plain_text)
+# print("Vigenere Encrypted Text:", vigenere_encrypted)
+# print("Polybius Encrypted Text:", polybius_encrypted)
+# print("Base36 Encrypted Text  :", base36_string)
+# print("\nDecrypted Base36 Text  :", original_decimal)
+# print("Decrypted Polybius Text:", polybius_decrypted)
+# print("Decrypted Vigenere Text:", vigenere_decrypted)
+
 
 @app.route('/')
 def index():
-    return render_template('index.html', left_text='', left_key='', encrypted_text='')
+    return render_template('index.html')
+
 
 @app.route('/encrypt_data', methods=['POST'])
 def encrypt_data():
     left_text = request.form['leftText']
     left_key = request.form['leftKey']
 
-    # Perform Vigenere encryption
-    vigenere_key_extended = generate_vigenere_key(left_text, left_key)
-    vigenere_encrypted = vigenere_encrypt(left_text, vigenere_key_extended)
+    # Perform encryption
+    vigenere_encrypted = vigenere_encrypt(left_text, left_key)
+    polybius_encrypted = polybius_encrypt(vigenere_encrypted)
+    base36_string = decimal_to_base36(int(polybius_encrypted))
 
-    # Perform Polybius encryption
-    polybius_table = generate_polybius_table()
-    polybius_encrypted = polybius_encrypt(vigenere_encrypted, polybius_table)
+    # Convert to decimal for display
+    original_decimal = base36_to_decimal(base36_string)
 
-    # Perform Base36 encoding
-    base36_encoded = base36_encode(polybius_encrypted)
+    # Decrypt Polybius cipher
+    polybius_decrypted = polybius_decrypt(str(original_decimal))
 
-    # Render the updated content
-    return render_template('index.html', left_text=left_text, left_key=left_key, encrypted_text=base36_encoded)
+    # Decrypt Vigenere cipher
+    vigenere_decrypted = vigenere_decrypt(polybius_decrypted, left_key)
 
-@app.route('/decrypt_data', methods=['POST'])
-def decrypt_data():
-    encrypted_text = request.form['rightData']
-    left_key = request.form['leftKey']
-
-    # Perform Base36 decoding
-    polybius_encrypted = base36_decode(encrypted_text)
-
-    # Perform Polybius decryption
-    polybius_table = generate_polybius_table()
-    vigenere_encrypted = polybius_decrypt(polybius_encrypted, polybius_table)
-
-    # Perform Vigenere decryption
-    vigenere_key_extended = generate_vigenere_key(vigenere_encrypted, left_key)
-    decrypted_text = vigenere_decrypt(vigenere_encrypted, vigenere_key_extended)
-
-    # Render the updated content
-    return render_template(
-        'index.html',
-        left_text='',
-        left_key=left_key,
-        encrypted_text=decrypted_text,  # Pass the decrypted text to the template
-        decoded_polybius=polybius_encrypted,  # Pass the Polybius decrypted text to the template
-        decoded_vigenere=vigenere_encrypted,  # Pass the Vigenere decrypted text to the template
-        decoded_text=decrypted_text  # Pass the final decrypted text to the template
-    )
+    return render_template('index.html',
+                           left_text=left_text,
+                           left_key=left_key,
+                           vigenere_encrypted=vigenere_encrypted,
+                           polybius_encrypted=polybius_encrypted,
+                           base36_string=base36_string,
+                           original_decimal=original_decimal,
+                           polybius_decrypted=polybius_decrypted,
+                           vigenere_decrypted=vigenere_decrypted)
 
 
 if __name__ == '__main__':
     app.run(debug=True)
-
